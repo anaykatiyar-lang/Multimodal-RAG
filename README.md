@@ -1,62 +1,124 @@
-Mini-Challenge 3 - starter kit
-==============================
+# Multimodal-RAG
 
-WHAT IS IN HERE
+**Evidence-Grounded Multimodal Retrieval-Augmented Generation on AMD Instinct MI300X**
 
-  mc3-corpus/            A SAMPLE corpus, the same shape as the one you are
-                         graded on: 13 files across 6 subdirectories.
-  sample-questions.json  The ten sample questions, each with the answer and the
-                         exact citations expected. Score yourself with it.
-  setup.sh               Recreates the two things a zip file cannot carry.
-                         Run it once, first. Linux/macOS only.
-  starter/               A working container that already implements the
-                         contract. Clone it and fill in the two functions.
-  selfcheck.py           Run this against your image before you submit. Same
-                         checks the harness runs, in the same order.
-  CONTRACT.md            The submission contract in full.
+## Overview
 
-START HERE
+Multimodal-RAG is a document intelligence and question-answering system developed as part of **AMD Mini-Challenge 3**.
 
-  ./setup.sh                       # recreates the two zip-proof corpus cases
-  # ... build your image, then:
-  python3 selfcheck.py your-image:tag mc3-corpus
+The project addresses the challenge of retrieving accurate technical information from complex engineering documentation containing PDFs, Word documents, spreadsheets, images, CSV files, logs, and source code.
 
-  Both selfcheck arguments are positional: your built image first, then a
-  corpus directory to try it against. mc3-corpus (this sample) is fine - the
-  corpus you pass is only used to prove your index pass and one query work
-  end to end, so it does not need to hold the real answers.
+It combines semantic retrieval with multimodal language-model reasoning to generate evidence-grounded answers with precise source citations.
 
-  You still need, and this kit does not provide: Docker, an AMD GPU to build
-  and test on, the mandated base image (a ~29 GiB pull, at build time, where
-  the network is open), and the model weights you choose to ship.
+## Architecture
 
-THE GRADED CORPUS IS NOT THIS ONE
+The system uses two complementary models:
 
-  At evaluation your container is handed a DIFFERENT corpus - larger and
-  harder - at the same path, /app/corpus. It follows the same conventions,
-  but the values are different. A solution that hardcodes an answer from this
-  sample scores zero. The questions are hidden too: the ten here show you the
-  shape, not the ones you will be asked.
+- **Qwen2.5-VL-7B-Instruct:** Multimodal language model for document understanding and answer generation.
+- **BAAI/bge-small-en-v1.5:** Embedding model for semantic document retrieval.
 
-THE TWO CASES A ZIP CANNOT CARRY
+### Processing Pipeline
 
-  setup.sh recreates both:
+1. **Document Ingestion:** Reads and processes heterogeneous engineering documents.
+2. **Document Indexing:** Extracts document content and generates semantic embeddings.
+3. **Retrieval:** Finds relevant evidence for incoming questions.
+4. **Multimodal Reasoning:** Uses Qwen2.5-VL to interpret retrieved context and generate answers.
+5. **Citation Generation:** Returns corpus-relative source paths supporting the answer.
+6. **Output Validation:** Produces structured JSON responses with answers, citations, and confidence scores.
 
-    - mc3-corpus/archive/ is an EMPTY directory, and some unzip tools drop it
-    - mc3-corpus/vendor/internal_audit.txt must be UNREADABLE (chmod 000)
+## Technology Stack
 
-  Two warnings about that unreadable file, because each one will let a broken
-  submission pass your own testing and fail ours:
+| Component             | Technology             |
+| --------------------- | ---------------------- |
+| Language              | Python                 |
+| Deep Learning         | PyTorch                |
+| GPU Acceleration      | AMD ROCm               |
+| GPU Hardware          | AMD Instinct MI300X    |
+| Vision-Language Model | Qwen2.5-VL-7B-Instruct |
+| Embedding Model       | BAAI/bge-small-en-v1.5 |
+| Containerization      | Docker                 |
+| Communication         | Unix Domain Socket     |
 
-    - On Windows, chmod does nothing at all. Test on Linux; Linux is what you
-      are evaluated on.
-    - As root, chmod 000 does not stop you reading the file either, because
-      root bypasses mode bits. At evaluation we drop the DAC_OVERRIDE
-      capability, which makes it genuinely raise. Check your own handling:
+## Key Engineering Features
 
-        docker run --cap-drop DAC_OVERRIDE ...
+- Multimodal technical document understanding.
+- Semantic retrieval using dense embeddings.
+- GPU-accelerated model inference.
+- Persistent model-serving architecture.
+- Source-level citation generation.
+- Offline inference without external network access at evaluation time.
+- Structured JSON output.
+- Document-processing error handling.
+- Designed around strict startup, inference latency, and GPU-memory constraints.
 
-  A corpus walk that raises on the first unreadable file indexes nothing after
-  it - and because the walk order follows the directory listing, which files
-  you end up indexing then depends on filename order. That is how a submission
-  scores well here and badly on the graded set.
+## Repository Structure
+```
+Multimodal-RAG/
+├── README.md
+├── CONTRACT.md
+├── sample-questions.json
+├── selfcheck.py
+├── selfcheck_gpu.py
+├── setup.sh
+├── starter/
+│   ├── Dockerfile
+│   └── app/
+└── submission/
+    ├── Dockerfile
+    ├── app/
+    │   ├── app.py
+    │   ├── server.py
+    │   └── requirements.txt
+    ├── build_and_test.sh
+    └── run_all_questions.sh
+```
+
+## Sample Evaluation Results
+
+The implementation achieved a perfect score on the supplied ten-question sample evaluation.
+
+| Evaluation Metric   | Result      |
+| ------------------- | ----------- |
+| Questions Evaluated | 10          |
+| Answer Validation   | 10/10 PASS  |
+| Citation Validation | 10/10 PASS  |
+| Total Score         | **200/200** |
+
+All ten sample questions passed both answer and citation checks.
+
+*Note: These are sample-set results, not an official hidden-test score.*
+
+## AMD GPU Deployment
+
+The application was built and tested on an AMD Instinct MI300X GPU environment using ROCm-enabled PyTorch.
+
+The deployment uses Docker to package the application, dependencies, and model weights. A persistent inference server loads the embedding and vision-language models onto the GPU, allowing subsequent questions to reuse the loaded models.
+
+## Running the Project
+
+Build the Docker image:
+```
+bash submission/build_and_test.sh
+```
+
+Run the sample evaluation:
+```
+bash submission/run_all_questions.sh
+```
+
+Run the GPU-enabled self-check:
+```
+python3 selfcheck_gpu.py mc3-rag:latest mc3-corpus
+```
+
+The sample corpus is a challenge test asset and is not included in this public repository.
+
+## Project Context
+
+**Challenge:** AMD Mini-Challenge 3 – Multimodal RAG
+
+**Focus:** Engineering Document Intelligence, Multimodal Retrieval, Evidence-Grounded Question Answering, and GPU-Accelerated Inference.
+
+**Hardware:** AMD Instinct MI300X
+
+**Repository:** [Multimodal-RAG](https://github.com/anaykatiyar-lang/Multimodal-RAG)
