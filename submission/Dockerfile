@@ -27,12 +27,12 @@ RUN pip install --no-cache-dir \
 # Step 2: Install torch-dependent packages with --no-deps
 RUN pip install --no-cache-dir --no-deps \
         transformers==4.52.4 \
-        tokenizers \
-        safetensors \
-        accelerate \
-        huggingface-hub \
-        qwen-vl-utils \
-        sentence-transformers
+        tokenizers==0.21.2 \
+        safetensors==0.5.3 \
+        accelerate==1.8.1 \
+        huggingface-hub==0.33.4 \
+        qwen-vl-utils==0.0.14 \
+        sentence-transformers==4.1.0
 
 # Step 3: Supporting packages that don't pull torch
 RUN pip install --no-cache-dir \

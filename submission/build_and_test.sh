@@ -4,7 +4,14 @@ set -e
 
 IMAGE_NAME="${1:-mc3-rag:latest}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-CORPUS_DIR="$SCRIPT_DIR/../mc3-corpus"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+CORPUS_DIR="${MC3_CORPUS_DIR:-$ROOT_DIR/mc3-corpus}"
+
+if [ ! -d "$CORPUS_DIR" ]; then
+    echo "[FAIL] Sample corpus not found: $CORPUS_DIR" >&2
+    echo "Obtain the MC3 sample corpus separately, or set MC3_CORPUS_DIR to its location." >&2
+    exit 1
+fi
 
 echo "════════════════════════════════════════════════════════════════════"
 echo " MC3 RAG — Build & Verification Pipeline"
@@ -19,7 +26,8 @@ docker build -t "$IMAGE_NAME" "$SCRIPT_DIR"
 # 2. Verify ROCm torch build inside image
 echo ""
 echo "▶ 2. Verifying ROCm PyTorch installation..."
-docker run --rm "$IMAGE_NAME" python3 -c "
+docker run --rm --device=/dev/kfd --device=/dev/dri \
+    --group-add video --ipc=host "$IMAGE_NAME" python3 -c "
 import torch
 print(f'PyTorch Version: {torch.__version__}')
 assert 'rocm' in torch.__version__, 'FATAL: Non-ROCm PyTorch detected!'
@@ -35,7 +43,7 @@ chmod 000 "$CORPUS_DIR/vendor/internal_audit.txt" 2>/dev/null || true
 # 4. Run official selfcheck
 echo ""
 echo "▶ 4. Running official selfcheck.py..."
-python3 "$SCRIPT_DIR/../selfcheck.py" "$IMAGE_NAME" "$CORPUS_DIR"
+python3 "$ROOT_DIR/selfcheck_gpu.py" "$IMAGE_NAME" "$CORPUS_DIR"
 
 # 5. Run full rigorous 200-point evaluator
 echo ""

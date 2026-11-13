@@ -1,0 +1,23 @@
+# Local challenge data and model artifacts
+mc3-corpus/
+models/
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.onnx
+
+# Credentials and local configuration
+.env
+.env.*
+!.env.example
+
+# Python and generated output
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+*.log
+submission/app/index/
+submission/app/output/

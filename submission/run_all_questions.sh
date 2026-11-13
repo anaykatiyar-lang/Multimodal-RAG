@@ -5,9 +5,20 @@ set -e
 
 IMAGE_NAME="${1:-mc3-rag:latest}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-CORPUS_DIR="$SCRIPT_DIR/../mc3-corpus"
-QUESTIONS_FILE="$SCRIPT_DIR/../sample-questions.json"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+CORPUS_DIR="${MC3_CORPUS_DIR:-$ROOT_DIR/mc3-corpus}"
+QUESTIONS_FILE="$ROOT_DIR/sample-questions.json"
 CONTAINER_NAME="mc3-eval-$(head -c 8 /dev/urandom | xxd -p 2>/dev/null || echo $RANDOM)"
+
+if [ ! -d "$CORPUS_DIR" ]; then
+    echo "[FAIL] Sample corpus not found: $CORPUS_DIR" >&2
+    echo "Obtain the MC3 sample corpus separately, or set MC3_CORPUS_DIR to its location." >&2
+    exit 1
+fi
+if [ ! -f "$QUESTIONS_FILE" ]; then
+    echo "[FAIL] Questions file not found: $QUESTIONS_FILE" >&2
+    exit 1
+fi
 
 echo "════════════════════════════════════════════════════════════════════"
 echo " AMD Mini-Challenge 3 — Rigorous Evaluation Harness"
@@ -20,7 +31,8 @@ trap 'docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true' EXIT
 # 1. Start container with --network none (strictly enforced by competition)
 echo ""
 echo "▶ 1. Starting container with --network none..."
-docker run -d --network none --name "$CONTAINER_NAME" "$IMAGE_NAME"
+docker run -d --network none --device=/dev/kfd --device=/dev/dri \
+    --group-add video --ipc=host --name "$CONTAINER_NAME" "$IMAGE_NAME"
 
 # 2. Wait for GPU server to become healthy
 echo "▶ 2. Waiting for resident GPU server to initialize..."
@@ -66,15 +78,15 @@ echo ""
 echo "▶ 4. Evaluating questions against sample-questions.json..."
 echo ""
 
-python3 - << 'EOF'
+python3 - "$QUESTIONS_FILE" "$CONTAINER_NAME" << 'EOF'
 import json
 import re
 import subprocess
 import sys
 import time
 
-QUESTIONS_FILE = "sample-questions.json"
-CONTAINER_NAME = sys.argv[1] if len(sys.argv) > 1 else ""
+QUESTIONS_FILE = sys.argv[1]
+CONTAINER_NAME = sys.argv[2]
 
 def normalize(val: str) -> str:
     if not val:
@@ -159,4 +171,4 @@ if total_score == max_score:
 else:
     print("WARNING: Some questions failed evaluation.")
     sys.exit(1)
-EOF "$CONTAINER_NAME"
+EOF
