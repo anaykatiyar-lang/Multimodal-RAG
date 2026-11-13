@@ -42,7 +42,7 @@ cannot submit.
 | | |
 |---|---|
 | `starter/` | A working container that already implements the contract. Clone it, fill in two functions. |
-| `selfcheck.py` | Run it against your container before submitting. Same checks the harness runs, in the same order. |
+| `selfcheck_gpu.py` | Run it against your container before submitting. Same checks the harness runs, with AMD GPU access enabled. |
 
 ## The contract
 

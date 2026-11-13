@@ -57,7 +57,6 @@ Multimodal-RAG/
 ├── README.md
 ├── CONTRACT.md
 ├── sample-questions.json
-├── selfcheck.py
 ├── selfcheck_gpu.py
 ├── setup.sh
 ├── starter/

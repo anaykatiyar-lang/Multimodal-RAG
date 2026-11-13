@@ -42,7 +42,7 @@ chmod 000 "$CORPUS_DIR/vendor/internal_audit.txt" 2>/dev/null || true
 
 # 4. Run official selfcheck
 echo ""
-echo "▶ 4. Running official selfcheck.py..."
+echo "▶ 4. Running GPU-enabled self-check..."
 python3 "$ROOT_DIR/selfcheck_gpu.py" "$IMAGE_NAME" "$CORPUS_DIR"
 
 # 5. Run full rigorous 200-point evaluator
